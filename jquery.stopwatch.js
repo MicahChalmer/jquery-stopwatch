@@ -1,7 +1,20 @@
 (function( $ ){
 
     function incrementer(ct, increment) {
-        return function() { ct+=increment; return ct; };
+        var startDate = new Date();
+        var startCt = ct;
+        // Make sure we have an actual number for startCt
+        if (!startCt) {
+            startCt = 0;
+        }
+        var result = function() {
+            return startCt + Math.round((new Date() - startDate)/increment)*increment;
+        };
+        result.restart = function(newCt) {
+            startCt = newCt;
+            startDate = new Date();
+        }
+        return result;
     }
     
     function pad2(number) {
@@ -79,6 +92,9 @@
                 var $this = $(this),
                     data = $this.data('stopwatch');
                 // Mark as active
+                if(!data.active) {
+                    data.incrementer.restart(data.elapsed);
+                }
                 data.active = true;
                 data.timerID = setInterval(data.tick_function, data.updateInterval);
                 $this.data('stopwatch', data);
