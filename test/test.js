@@ -62,6 +62,34 @@ test("Stop", function(){
     equals($elem.data('stopwatch').active, false);
 });
 
+test("Stop and then Start", function(){
+    var interval = $elem.data('stopwatch').updateInterval;
+    // Start the stopwatch for one tick, stop it for more than two ticks, then
+    // restart it for one more tick.  The elapsed time should be two ticks, even
+    // though three and a half ticks worth of actual wall clock time went by.
+    var firstTick = true;
+    var restart = function() {
+        // in-between waiting time is over; restart the stopwatch
+        $elem.stopwatch('start');
+    }
+    $elem.stopwatch().bind('tick.stopwatch', function(e, elapsed) {
+        if (firstTick) {
+            // First tick: stop and wait 2.5 ticks
+            equals($elem.stopwatch('getTime'), interval);
+            $elem.stopwatch('stop');
+            setTimeout(restart, Math.floor(interval*2.5));
+        } else {
+            // Second tick: stop the stopwatch, elapsed should be 2 ticks
+            equals($elem.stopwatch('getTime'), interval * 2);
+            $elem.stopwatch('stop');
+            start();
+        }
+        firstTick = false;
+    });
+    stop();
+    $elem.stopwatch('start');
+});
+
 test("Toggle", function(){
     $elem.stopwatch('stop');
     $elem.stopwatch('toggle');
