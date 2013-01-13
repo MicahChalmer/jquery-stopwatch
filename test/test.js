@@ -185,3 +185,33 @@ test("Custom update interval", function(){
         start();
     }, 2000);
 });
+
+test("Slow callback should not affect accuracy", function(){
+    $elem.stopwatch('init', {updateInterval: 100});
+    // We're going to sleep for 50 millisecs, with the stopwatch running
+    // on a 10-milisecond interval.  The result should be two ticks:
+    // the first after 10 milliseconds, and the next after 60.  The second
+    // one should nevertheless report a 60 millisec elapsed time.
+    var ticksEncountered = 0;
+    var data = $elem.data('stopwatch');
+    var tickFunction;
+    tickFunction = function(e, elapsed) {
+        if (ticksEncountered >= 1) {
+            equals(ticksEncountered, 1);
+            equals(data.elapsed, 600);
+            $elem.stopwatch().unbind('tick.stopwatch', tickFunction);
+            start();
+        } else {
+            // Yes, this is a ridiculous busy-wait.  But the point is to test
+            // for callbacks that inherently take longer than our interval to
+            // complete.
+            var startDt = new Date();
+            var currDt = null;
+            do { currDt = new Date(); } while (currDt - startDt < 500);
+        }
+        ++ticksEncountered;
+    };
+    $elem.stopwatch().bind('tick.stopwatch', tickFunction);
+    stop();
+    $elem.stopwatch('start');
+});
